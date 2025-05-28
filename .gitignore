@@ -9,7 +9,4 @@ __pycache__/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# Notebooks
-*.ipynb
-
 TransformParameters*
