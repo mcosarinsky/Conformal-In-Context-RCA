@@ -1,12 +1,15 @@
 env/
 sam2/
-results/
+!segment-anything-2/sam2/
 datasets/
 !src/datasets/
-src/models/fss_models.py
 __pycache__/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+# Notebooks
+*.ipynb
+
 TransformParameters*
+
