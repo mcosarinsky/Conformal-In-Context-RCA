@@ -42,6 +42,7 @@ class AtlasRCA(BaseRCA):
         for sample in tqdm(d_eval):
             img = sample['image']
             seg = sample['seg']
+            name = sample['name']
             
             # Normalize when n_classes is 1
             if self.n_classes == 1:
@@ -65,7 +66,7 @@ class AtlasRCA(BaseRCA):
             self.classifier.set_sample(img, seg)
             pred_score = self.classifier.predict(selected_subset, self.elx_params)
 
-            results.append({'Real score': real_score, 'RCA score': pred_score})
+            results.append({'Real score': real_score, 'RCA score': pred_score, 'Image name': name})
 
         return results
         
@@ -86,6 +87,7 @@ class UniverSegRCA(BaseRCA):
         for sample in tqdm(d_eval):
             img = sample['image']
             seg = sample['seg']
+            name = sample['name']
 
             if 'GT' in sample:
                 label = sample['GT']
@@ -109,7 +111,7 @@ class UniverSegRCA(BaseRCA):
             self.classifier.set_sample(img, seg)
             pred_score = self.classifier.predict(selected_subset)
 
-            results.append({'Real score': real_score, 'RCA score': pred_score})
+            results.append({'Real score': real_score, 'RCA score': pred_score, 'Image name': name})
 
         return results
         
@@ -130,6 +132,7 @@ class SAM2RCA(BaseRCA):
         for sample in tqdm(d_eval):
             img = sample['image']
             seg = sample['seg']
+            name = sample['name']
 
             if 'GT' in sample:
                 label = sample['GT']
@@ -153,7 +156,7 @@ class SAM2RCA(BaseRCA):
             self.classifier.set_sample(img, seg)
             pred_score = self.classifier.predict(selected_subset)
 
-            results.append({'Real score': real_score, 'RCA score': pred_score})
+            results.append({'Real score': real_score, 'RCA score': pred_score, 'Image name': name})
 
         return results
     
@@ -166,7 +169,7 @@ class RCA:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if emb_model_name is not None:
-            self.processor = AutoImageProcessor.from_pretrained(emb_model_name)
+            self.processor = AutoImageProcessor.from_pretrained(emb_model_name, token="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")
             self.emb_model = AutoModel.from_pretrained(emb_model_name).to(device)
         else:
             self.processor = None
