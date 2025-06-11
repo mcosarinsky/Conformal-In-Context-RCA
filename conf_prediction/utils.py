@@ -111,24 +111,24 @@ def plot_rca_range_vs_real(
         plt.show()
         
 
-def plot_interval_size(conformal_results, title=''):
-    """
-    Plot interval width distributions from multiple conformal result sets.
-    """
+def plot_interval_size(all_model_results, title=''):
+
     all_data = []
 
-    for method in conformal_results:
-        for res in conformal_results[method]:
-            intervals = np.array(res['intervals'])
-            widths = intervals[:, 1] - intervals[:, 0]
-            class_idx = res.get('class', 0)
+    for model, conformal_results in all_model_results.items():
+        for method in conformal_results:
+            for res in conformal_results[method]:
+                intervals = np.array(res['intervals'])
+                widths = intervals[:, 1] - intervals[:, 0]
+                class_idx = res.get('class', 0)
 
-            for w in widths:
-                all_data.append({
-                    'Interval Width': w,
-                    'Method': method,
-                    'Class': f'Class {class_idx}'
-                })
+                for w in widths:
+                    all_data.append({
+                        'Interval Width': w,
+                        'Method': method,
+                        'Model': model,
+                        'Class': f'Class {class_idx}'
+                    })
 
     df = pd.DataFrame(all_data)
     n_classes = len(df['Class'].unique())
@@ -138,10 +138,19 @@ def plot_interval_size(conformal_results, title=''):
         axes = [axes]
 
     for i, (cls, group) in enumerate(df.groupby('Class')):
-        sns.boxplot(data=group, x='Method', y='Interval Width', ax=axes[i])
-        axes[i].set_title(cls)
-        axes[i].tick_params(axis='x', rotation=45)
-        axes[i].set_ylim(bottom=0)
+        ax = axes[i]
+        # boxplot grouped by Method and colored by Model
+        sns.boxplot(
+            data=group,
+            x='Method',
+            y='Interval Width',
+            hue='Model',
+            ax=ax
+        )
+        ax.set_title(cls)
+        ax.tick_params(axis='x', rotation=45)
+        ax.set_ylim(bottom=0)
+        ax.legend(title='Method', loc='upper left')
 
     plt.suptitle(title)
     plt.tight_layout()
@@ -376,13 +385,3 @@ def bin_by_value(y_values):
             mask = (y_values >= low) & (y_values <= high)
         labels[mask] = label
     return labels
-
-
-def split_calibration_test(n, frac=0.5, seed=None):
-    """Random 50/50 (or frac) split of indices [0..n-1]."""
-    rng = np.random.default_rng(seed)
-    idx = np.arange(n)
-    rng.shuffle(idx)
-    cut = int(frac * n)
-    return idx[:cut], idx[cut:]
-

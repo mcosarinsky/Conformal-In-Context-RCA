@@ -33,7 +33,7 @@ def read_json(file_path):
 
 def process_results(file_path, metric='Dice'):
     eval_results = read_json(file_path)
-    supported_metrics = ['Dice', 'Hausdorff', 'ASSD']
+    supported_metrics = ['Dice', 'Hausdorff', 'ASSD', 'HD95']
     res = {'Real':[], 'Predicted': []}
 
     if metric not in supported_metrics:

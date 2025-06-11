@@ -3,6 +3,7 @@ opencv-python
 torchvision
 torchmetrics
 matplotlib
+seaborn
 tqdm
 faiss-cpu
 transformers

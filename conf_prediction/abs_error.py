@@ -1,5 +1,4 @@
 import numpy as np
-from .utils import split_calibration_test
 
 def hat_y(arr, estimator):
     """Central estimator: 'mean' or 'max'."""
@@ -57,53 +56,48 @@ def nonconformity_score(arr, y, estimator='mean', sigma_type='std', scale_factor
         raise ValueError(f"Unknown sigma_type: {sigma_type}")
     return (err / max(s, 1e-6)) * scale_factor
 
-def conformal_calibrate(
-    dataset_dict,
-    estimator='mean',
-    alpha=0.1,
-    frac_cal=0.5,
-    sigma_type='std',
-    scale_factor=1.0,
-    seed=42
-):
+def conformal_calibrate(dataset_dict, estimator='mean', alpha=0.1, sigma_type='std', scale_factor=1.0, n=50):
     """
     Perform conformal calibration for single or multi-class case.
-    dataset_dict: {'Real score': [...], 'RCA score': [...]}
+
+    dataset_dict contains:
+      - 'cal': {'Real score': array, 'RCA score': list of arrays}
+      - 'test': {'Real score': array, 'RCA score': list of arrays}
+
     Returns:
-        - For binary/multiclass: list of dicts (one per class)
+        - For multiclass: list of dicts (one per class)
         - For single-class: single dict
     """
-    real = np.array(dataset_dict['Real score'])
-    rca  = dataset_dict['RCA score']
-    n = len(real)
+    real_cal = np.array(dataset_dict['cal']['Real score'])
+    real_test = np.array(dataset_dict['test']['Real score'])
+    rca_cal = np.array(dataset_dict['cal']['RCA score'])[:, :n]
+    rca_test = np.array(dataset_dict['test']['RCA score'])[:, :n]
 
-    # Check if multiclass (k = number of classes)
-    is_multiclass = np.ndim(real) == 2
-    k = real.shape[1] if is_multiclass else 1
-
-    # Split indices
-    calib_idx, test_idx = split_calibration_test(n, frac_cal, seed)
+    is_mc = np.ndim(real_cal) == 2
+    k = real_cal.shape[1] if is_mc else 1
 
     results = []
 
     for class_idx in range(k):
-        # Extract class-specific values
-        real_class = real[:, class_idx] if is_multiclass else real
-        rca_class = [np.array(r)[:, class_idx] if is_multiclass else np.array(r) for r in rca]
+        y_cal = real_cal[:, class_idx] if is_mc else real_cal
+        y_test = real_test[:, class_idx] if is_mc else real_test
+        rca_cal_class = rca_cal[:, :, class_idx] if is_mc else rca_cal
+        rca_test_class = rca_test[:, :, class_idx] if is_mc else rca_test
 
         # Calibration scores
         scores = [
-            nonconformity_score(rca_class[i], real_class[i], estimator, sigma_type, scale_factor)
-            for i in calib_idx
+            nonconformity_score(rca_cal_class[i], y_cal[i], estimator, sigma_type, scale_factor)
+            for i in range(len(y_cal))
         ]
-        N = len(calib_idx)
-        qhat = np.quantile(scores, np.ceil((N+1)*(1-alpha))/N, method='higher')
+        N = len(scores)
+        qhat = np.quantile(scores, np.ceil((N + 1) * (1 - alpha)) / N, method='higher')
 
-        # Prediction intervals
         preds = []
         intervals = []
-        for i in test_idx:
-            arr = np.array(rca_class[i])
+        test_scores = []
+
+        for i in range(len(y_test)):
+            arr = rca_test_class[i]
             y_hat = hat_y(arr, estimator)
             preds.append(y_hat)
 
@@ -128,15 +122,19 @@ def conformal_calibrate(
             hi = min(1.0, y_hat + half_width)
             intervals.append((lo, hi))
 
+            test_scores.append(nonconformity_score(arr, y_test[i], estimator, sigma_type, scale_factor))
+
         result = {
             'intervals': intervals,
-            'y_test': real_class[test_idx],
+            'y_test': y_test,
             'y_hat': preds,
             'q': qhat,
             'scores': scores,
+            'test_scores': test_scores,
         }
-
-        if is_multiclass:
+        if is_mc:
             result['class'] = class_idx
+
         results.append(result)
-    return results 
+
+    return results
