@@ -227,7 +227,7 @@ def plot_score(ax, real_scores, pred_scores, bold_corr=False, bold_mae=False):
         label_text,
         xy=(0.04, 0.85),  # Adjusted y-coordinate for annotation box
         xycoords='axes fraction',
-        fontsize=10,  # Increased fontsize for better readability
+        fontsize=12,  
         bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='white')
     )
 
@@ -276,19 +276,20 @@ def plot_scores_multi(ax, real_scores, pred_scores, class_names=None, bold_corr_
         sns.scatterplot(x=real_class_scores, y=pred_class_scores, ax=ax, color=colors[i],
                         label=label_text)
 
-    ax.legend(loc=(0.01, 0.83), fancybox=True, fontsize=10, labelspacing=0.1, handletextpad=0.05)
+    ax.legend(loc=(0.01, 0.81), fancybox=True, fontsize=12, labelspacing=0.1, handletextpad=0.05)
 
 def plot_results(eval_results, **kwargs):
     sns.set_theme(style="whitegrid")
     
     # Automatically determine which methods to bold
     eval_results = find_best_methods(eval_results)
-
     n_cols = kwargs.get('n_cols', 3)
-    fontsize = kwargs.get('fontsize', 17)
     n_rows = len(eval_results)
+    figsize = kwargs.get('figsize', (3 * n_cols, 3 * n_rows))
+
+    fontsize = kwargs.get('fontsize', 17)
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True,
-                             figsize=(3*n_cols, 3*n_rows))
+                             figsize=figsize)
     axes = axes.flatten()
 
     for i, eval_dict in enumerate(eval_results):
@@ -319,7 +320,7 @@ def plot_results(eval_results, **kwargs):
             ax.set_box_aspect(1)
 
     plt.tight_layout()
-    plt.subplots_adjust(wspace=0.1, hspace=-0.2)
+    plt.subplots_adjust(wspace=0.05, hspace=-0.1)
 
     return fig
 
