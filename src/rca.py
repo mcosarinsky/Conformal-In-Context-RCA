@@ -166,8 +166,8 @@ class RCA:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if emb_model_name is not None:
-            self.processor = AutoImageProcessor.from_pretrained(emb_model_name, token="")
-            self.emb_model = AutoModel.from_pretrained(emb_model_name, token="").to(device)
+            self.processor = AutoImageProcessor.from_pretrained(emb_model_name, token="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")
+            self.emb_model = AutoModel.from_pretrained(emb_model_name, token="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").to(device)
         else:
             self.processor = None
             self.emb_model = None

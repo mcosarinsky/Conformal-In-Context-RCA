@@ -109,26 +109,25 @@ def plot_rca_range_vs_real(
         plt.grid(True)
         plt.tight_layout()
         plt.show()
-        
 
-def plot_interval_size(all_model_results, title=''):
-
+def plot_interval_size(conformal_results, title=''):
+    """
+    Plot interval width distributions from multiple conformal result sets.
+    """
     all_data = []
 
-    for model, conformal_results in all_model_results.items():
-        for method in conformal_results:
-            for res in conformal_results[method]:
-                intervals = np.array(res['intervals'])
-                widths = intervals[:, 1] - intervals[:, 0]
-                class_idx = res.get('class', 0)
+    for method in conformal_results:
+        for res in conformal_results[method]:
+            intervals = np.array(res['intervals'])
+            widths = intervals[:, 1] - intervals[:, 0]
+            class_idx = res.get('class', 0)
 
-                for w in widths:
-                    all_data.append({
-                        'Interval Width': w,
-                        'Method': method,
-                        'Model': model,
-                        'Class': f'Class {class_idx}'
-                    })
+            for w in widths:
+                all_data.append({
+                    'Interval Width': w,
+                    'Method': method,
+                    'Class': f'Class {class_idx}'
+                })
 
     df = pd.DataFrame(all_data)
     n_classes = len(df['Class'].unique())
@@ -138,24 +137,166 @@ def plot_interval_size(all_model_results, title=''):
         axes = [axes]
 
     for i, (cls, group) in enumerate(df.groupby('Class')):
-        ax = axes[i]
-        # boxplot grouped by Method and colored by Model
-        sns.boxplot(
-            data=group,
-            x='Method',
-            y='Interval Width',
-            hue='Model',
-            ax=ax
-        )
-        ax.set_title(cls)
-        ax.tick_params(axis='x', rotation=45)
-        ax.set_ylim(bottom=0)
-        ax.legend(title='Method', loc='upper left')
+        sns.boxplot(data=group, x='Method', y='Interval Width', ax=axes[i])
+        axes[i].set_title(cls)
+        axes[i].tick_params(axis='x', rotation=45)
+        axes[i].set_ylim(bottom=0)
 
     plt.suptitle(title)
     plt.tight_layout()
     plt.show()
 
+def plot_datasets_interval_widths(data, cal_method, figsize=(14,7), title=None, **kwargs):
+    # Lookup table for dataset labels
+    label_lookup = {
+        "hc18": ["HC18"],
+        "jsrt": ["JSRT (Lung)", "JSRT (Heart)"],
+        "ph2": ["PH2"],
+        "psfhs": ["PSFHS (PS)", "PSFHS (FH)"],
+        "scd": ["SCD"],
+        "irca": ["3D-IRCAdB"],
+        "wbc_cv": ["WBC CV (Nuc)", "WBC CV (Cyt)"],
+        "wbc_jtsc": ["WBC JTSC (Nuc)", "WBC JTSC (Cyt)"],
+        "isic 2018": ["ISIC 2018"],
+        "nucls": ["NuCLS"]
+    }
+
+    # Model label mapping
+    model_lookup = {'sam': 'SAM 2', 'atlas-ra': 'Atlas-RA'}
+
+    all_data = []
+
+    for dataset in label_lookup.keys():
+        for model in model_lookup:
+            conf_results = cal_method(data[model][dataset], **kwargs)
+
+            dataset_labels = label_lookup.get(dataset.lower(), [dataset.upper()])
+
+            for res, label in zip(conf_results, dataset_labels):
+                intervals = np.array(res['intervals'])
+                widths = intervals[:, 1] - intervals[:, 0]
+
+                for w in widths:
+                    all_data.append({
+                        'Interval Width': w,
+                        'Dataset': label,
+                        'Model': model_lookup[model]
+                    })
+
+    df = pd.DataFrame(all_data)
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=figsize)
+    sns.boxplot(data=df, x='Dataset', y='Interval Width', hue='Model', ax=ax)
+
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+        tick.set_ha('right')
+        tick.set_fontsize(14)
+
+    ax.tick_params(axis='y', labelsize=13)
+    ax.set_title(title, fontsize=18, pad=20)
+    ax.set_xlabel('Dataset', fontsize=17)
+    ax.set_ylabel('Interval Width', fontsize=15)
+    ax.legend(title='', loc='upper left', fontsize=14)
+
+    fig.tight_layout()
+    return fig
+
+def plot_datasets_coverage(
+    data,
+    cal_method,
+    binning_func,
+    model='sam',
+    alpha=0.1,
+    figsize=(16, 8),
+    title=None,
+    **kwargs
+):
+
+    label_lookup = {
+        "hc18": ["HC18"],
+        "jsrt": ["JSRT (Lung)", "JSRT (Heart)"],
+        "ph2": ["PH2"],
+        "psfhs": ["PSFHS (PS)", "PSFHS (FH)"],
+        "scd": ["SCD"],
+        "irca": ["3D-IRCAdB"],
+        "wbc_cv": ["WBC CV (Nuc)", "WBC CV (Cyt)"],
+        "wbc_jtsc": ["WBC JTSC (Nuc)", "WBC JTSC (Cyt)"],
+        "isic 2018": ["ISIC 2018"],
+        "nucls": ["NuCLS"]
+    }
+
+    if model not in data:
+        raise ValueError(f"Model '{model}' not found in data")
+
+    all_data = []
+
+    for dataset in data[model].keys():
+        conf_results = cal_method(data[model][dataset], alpha=alpha, **kwargs)
+
+        dataset_labels = label_lookup.get(dataset.lower(), [dataset.upper()])
+
+        for res, label in zip(conf_results, dataset_labels):
+            y_test = np.array(res['y_test'])
+            intervals = np.array(res['intervals'])
+            widths = intervals[:, 1] - intervals[:, 0]
+
+            # Marginal coverage
+            covered = (y_test >= intervals[:, 0]) & (y_test <= intervals[:, 1])
+            marginal_coverage = covered.mean()
+            all_data.append({
+                'Coverage': marginal_coverage,
+                'Dataset': label,
+                'Condition': 'Marginal'
+            })
+
+            # Conditioning bins
+            bin_labels = binning_func(widths if binning_func.__name__ == 'bin_by_width' else y_test)
+            unique_bins = np.unique(bin_labels)
+
+            for bin_label in unique_bins:
+                if bin_label == '':
+                    continue  # skip empty labels
+                mask = bin_labels == bin_label
+                if np.sum(mask) == 0:
+                    continue
+                bin_covered = covered[mask]
+                bin_cov = bin_covered.mean()
+                all_data.append({
+                    'Coverage': bin_cov,
+                    'Dataset': label,
+                    'Condition': bin_label
+                })
+
+    df = pd.DataFrame(all_data)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Get distinct conditions sorted so Marginal is first and then others
+    conditions = sorted(df['Condition'].unique(), key=lambda x: (x != 'Marginal', x))
+
+    # Create a viridis palette with the correct number of colors
+    palette = sns.color_palette("viridis", n_colors=len(conditions))
+
+    sns.barplot(data=df, x='Dataset', y='Coverage', hue='Condition', ax=ax, palette=palette,
+                hue_order=conditions)
+
+    ax.axhline(1 - alpha, color='red', linestyle='--', label=f'1 - α = {1 - alpha:.2f}')
+
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+        tick.set_ha('right')
+        tick.set_fontsize(14)
+
+    ax.tick_params(axis='y', labelsize=13)
+    if title is not None:
+        ax.set_title(title, fontsize=18, pad=20)
+    ax.set_xlabel('Dataset', fontsize=17)
+    ax.set_ylabel('Coverage', fontsize=15)
+    ax.legend(title='', bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=12, borderaxespad=0.)
+
+    fig.tight_layout()
+    return fig
 
 def plot_coverage(conformal_results, alpha=0.1, title=''):
     """

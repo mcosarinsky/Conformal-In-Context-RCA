@@ -7,9 +7,9 @@ from ..utils.io import load_train_folder
 
 class TrainerDataset(Dataset):
     def __init__(self, split: str, dataset: str, target_size: int = 256, transform: Optional[Callable] = None, grayscale: bool = True):
-        if split not in ['Train', 'Test']:
+        if split not in ['Train', 'Test', 'Calibration']:
             raise ValueError("Invalid split. Must be one of 'Train', 'Test'")
-        datasets = ['hc18', 'camus', 'psfhs', 'scd', 'jsrt', 'ph2', 'isic 2018', '3d-ircadb/liver', 'nucls', 'wbc/cv', 'wbc/jtsc']
+        datasets = ['hc18', 'psfhs', 'scd', 'jsrt', 'ph2', 'isic 2018', '3d-ircadb/liver', 'nucls', 'wbc/cv', 'wbc/jtsc']
         if dataset not in datasets:
             raise ValueError(f"Invalid dataset. Must be one of {datasets}")
         
@@ -43,10 +43,13 @@ class TrainerDataset(Dataset):
         if self.transform:
             self.transform(sample)
 
+        sample['GT'] = sample['GT'].squeeze()
         return sample
 
     def load_data(self):
         if self.split == 'Test':
             return load_train_folder(self.path / 'Test')
+        elif self.split == 'Calibration':
+            return load_train_folder(self.path / 'Calibration')
         else:
             return load_train_folder(self.path / 'Train')

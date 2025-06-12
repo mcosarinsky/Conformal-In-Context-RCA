@@ -40,11 +40,19 @@ def quantile_calibrate(dataset_dict, p_l=0.40, p_h=0.95, alpha=0.10, n=50):
             intervals.append((lb, ub))
             preds.append(np.mean(rca))
 
+        S_test = []
+        for y, rca in zip(y_test, rca_test_class):
+            lo, hi = quantile_band_asymm(rca, p_l, p_h)
+            S_test.append(max(lo - y, y - hi))
+
         outputs.append({
             'class': class_idx,
             'intervals': intervals,
             'y_test': y_test,
             'y_hat': preds,
+            'scores': S_cal,
+            'test_scores': S_test,
+            'q': qhat,
         })
 
     return outputs
