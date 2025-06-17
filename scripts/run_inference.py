@@ -83,10 +83,10 @@ def main():
         d_reference = Seg2D_Dataset(split='Train', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         d_test = Seg2D_Dataset(split='Test', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         d_cal = Seg2D_Dataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
-        #d_eval_np = Seg2D_Dataset(split='Test', dataset=args.dataset, grayscale=grayscale, target_size=target_size)
-        #scores = compute_scores(d_eval_np, n_classes)
-        #idxs = sample_balanced(scores, n_buckets=4, min_val=0.2)
-        #d_eval = Subset(d_eval, idxs)
+        d_test_np = Seg2D_Dataset(split='Test', dataset=args.dataset, grayscale=grayscale, target_size=target_size)
+        scores = compute_scores(d_test_np, n_classes)
+        idxs = sample_balanced(scores, n_buckets=3, min_val=0)
+        d_test = Subset(d_test, idxs)
         print('Evaluating', len(d_test), 'samples for test and', len(d_cal), 'samples for calibration')
 
     rca_args = {'eval_metrics': ['Dice', 'Hausdorff', 'HD95', 'ASSD'],
@@ -109,7 +109,7 @@ def main():
     rca_clf = RCA(model=args.classifier, **rca_args)
     
     preds_test = rca_clf.run_evaluation(d_reference, d_test)
-    to_json(preds_test, args.output_file + '_test.json')
+    to_json(preds_test, args.output_file)
 
     #preds_cal = rca_clf.run_evaluation(d_reference, d_cal)
     #to_json(preds_cal, args.output_file + '_cal.json')

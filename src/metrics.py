@@ -246,3 +246,31 @@ def generalised_energy_distance(
         ed = ed[0]
 
     return ed
+
+
+def predict_dice(probs: torch.Tensor) -> torch.Tensor:
+    """
+    Computes soft DSC for all classes using the mean prediction as pseudo ground truth
+    Parameters:
+    - probs: Tensor of shape [C, H, W] — softmax probabilities
+    Returns:
+    - Tensor of shape [C-1] — soft DSC per class excluding background (class 0)
+    """
+    C, H, W = probs.shape
+    
+    # Get hard prediction as pseudo ground truth
+    pred_hard = probs.argmax(dim=0)  # [H, W]
+    dices = torch.zeros(C - 1, device=probs.device)
+
+    for j in range(1, C):  # skip class 0 (background)
+        p_j = probs[j]  # Soft probabilities for class j 
+        gt_j = (pred_hard == j).float()  # Hard mask for class j (pseudo ground truth)
+        
+        # Compute soft Dice coefficient
+        intersection = (p_j * gt_j).sum()
+        union = p_j.sum() + gt_j.sum()
+        dice = (2 * intersection) / union
+        
+        dices[j - 1] = dice
+
+    return dices

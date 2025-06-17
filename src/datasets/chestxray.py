@@ -109,6 +109,7 @@ class LandmarksDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
 
+        sample['name'] = img_name
         return sample
 
 
@@ -415,6 +416,9 @@ def getDenseMask(RL, LL, H = None, CLA1 = None, CLA2 = None, size=1024):
 
 class ToTensorSeg(object):
     """Convert ndarrays in sample to Tensors."""
+    
+    def __init__(self, add_channel_dim=True):
+        self.add_channel_dim = add_channel_dim
 
     def __call__(self, sample):
         image, landmarks = sample['image'], sample['landmarks']
@@ -442,12 +446,16 @@ class ToTensorSeg(object):
             CLA2 = landmarks[143:,:]
             seg = getDenseMask(RL, LL, H, CLA1, CLA2, size=size)
             
-        sample['image'] = torch.from_numpy((image - image.min()) / (image.max() - image.min())).float() #torch.from_numpy(image).float()
-        sample['GT'] = torch.from_numpy(seg).long().unsqueeze(0)
+        sample['image'] = torch.from_numpy((image - image.min()) / (image.max() - image.min())).float()
+        sample['GT'] = torch.from_numpy(seg).long()
+        if self.add_channel_dim:
+            sample['GT'] = sample['GT'].unsqueeze(0)
         del sample['landmarks'] # delete old key
         
         if 'seg' in sample:
-            sample['seg'] = torch.from_numpy(sample['seg']).long().unsqueeze(0)
+            sample['seg'] = torch.from_numpy(sample['seg']).long()
+            if self.add_channel_dim:
+                sample['seg'] = sample['seg'].unsqueeze(0)
         
         return sample
     

@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from pathlib import Path
 from src.models.hierarchical_models import PHISeg
 from src.metrics import per_label_dice
-from src.datasets import TrainerDataset
+from src.datasets import *
 from src.utils.data_transforms import ToTensor, convert_to_onehot, harden_softmax_outputs
 from src.utils.io import save_segmentation
 
@@ -24,16 +24,6 @@ def set_seed(seed: int = 42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-
-
-def get_linear_schedule_with_warmup(optimizer, warmup_epochs, base_lr=1e-4, start_lr=1e-5):
-    def lr_lambda(epoch):
-        if epoch < warmup_epochs:
-            lr_scale = start_lr + (base_lr - start_lr) * (epoch / (warmup_epochs - 1))
-            return lr_scale / base_lr
-        else:
-            return 1.0
-    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
 
 def train_step(model, dataloader, optimizer, device, accum_steps=1):
@@ -116,9 +106,6 @@ if __name__ == "__main__":
     set_seed(args.random_seed)
 
     checkpoint_dir = os.path.join("./phiseg_checkpoints", args.dataset)
-    
-    if os.path.exists(checkpoint_dir):
-        shutil.rmtree(checkpoint_dir)
 
     if args.dataset in ['psfhs', 'jsrt', 'wbc/cv', 'wbc/jtsc']:
         n_classes = 2
@@ -130,23 +117,25 @@ if __name__ == "__main__":
     transforms = torchvision.transforms.Compose(transforms_list)
     target_size = 128 if '3d-ircadb' in args.dataset else 256
 
-    train_dataset = TrainerDataset(split='Train', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
-    cal_dataset = TrainerDataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
-    #test_full = ConcatDataset([test_dataset, cal_dataset])
+    if args.dataset == 'jsrt':
+        transforms_list = [chestxray.Rescale(target_size), chestxray.ToTensorSeg(add_channel_dim=False)]
+        transforms = torchvision.transforms.Compose(transforms_list)
+        train_dataset, test_dataset, cal_dataset = chestxray.get_jsrt_datasets(transforms)
+    else:
+        train_dataset = TrainerDataset(split='Train', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
+        cal_dataset = TrainerDataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
+        test_dataset = TrainerDataset(split='Test', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
 
     train_kwargs = {'pin_memory': True, 'batch_size': args.batch_size, 'shuffle': True}
     val_kwargs = {'pin_memory': True, 'batch_size': 1, 'shuffle': False}
 
+    full_dataset = ConcatDataset([train_dataset, cal_dataset, test_dataset])
     train_loader = DataLoader(train_dataset, **train_kwargs, drop_last=True)
     cal_loader = DataLoader(cal_dataset, **val_kwargs)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = PHISeg(total_levels=7, latent_levels=5, zdim=2, num_classes=n_classes+1, beta=1.0).to(device)
     optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
-
-    start_lr = args.lr * 0.01
-    warmup_epochs = 7
-    scheduler = get_linear_schedule_with_warmup(optimizer, warmup_epochs, base_lr=args.lr, start_lr=start_lr)
 
     os.makedirs(checkpoint_dir, exist_ok=True)
 
@@ -156,9 +145,7 @@ if __name__ == "__main__":
     for epoch in tqdm(range(args.epochs), initial=1):
         train_loss = train_step(model, train_loader, optimizer, device, accum_steps=args.accum_steps)
         current_lr = optimizer.param_groups[0]['lr']
-        print(f"Learning rate: {current_lr:.1e}")
         print(f"\nTrain loss: {train_loss:.2f}")
-        scheduler.step()
 
         val_loss, val_dice = validation_step(
             model=model,
@@ -169,7 +156,15 @@ if __name__ == "__main__":
         val_dice_str = ", ".join(f"{d:.2f}" for d in val_dice)
         print(f"Val loss: {val_loss:.2f}, Val Dice per class: [{val_dice_str}]\n")
 
-        # Save model checkpoint
-        checkpoint_name = f"epoch{epoch + 1}_bs{args.batch_size}_lr{args.lr:.0e}.pth"
+        base_name = f"epoch{epoch + 1}_bs{args.batch_size}_lr{args.lr:.0e}"
+        checkpoint_name = f"{base_name}.pth"
         checkpoint_path = os.path.join(checkpoint_dir, checkpoint_name)
+ 
+        counter = 1
+        while os.path.exists(checkpoint_path):
+            checkpoint_name = f"{base_name}_run{counter}.pth"
+            checkpoint_path = os.path.join(checkpoint_dir, checkpoint_name)
+            counter += 1
+ 
         torch.save(model.state_dict(), checkpoint_path)
+        print(f"Saved checkpoint: {checkpoint_name}")
