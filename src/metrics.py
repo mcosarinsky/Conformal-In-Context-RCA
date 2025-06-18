@@ -46,6 +46,16 @@ def compute_scores(data, num_classes, metric=Dice):
     
     return np.array(scores)
 
+def compute_scores_by_name(data, num_classes, metric=Dice):
+    scores = {}
+
+    for sample in data:
+        name = sample['seg_name']
+        result, reference = sample['seg'], sample['GT']
+        score = multiclass_score(result, reference, metric, num_classes)
+        scores[name] = score
+    
+    return scores
 
 def sample_N(scores, N, n_buckets=10):
     """

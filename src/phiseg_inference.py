@@ -52,10 +52,10 @@ def run_inference(model, dataloader, device, output_dir, checkpoint_name, num_sa
             dsc_stack = torch.stack(dsc_list)  # [N, C-1]
 
             # Mean and std over samples for each class (excluding background)
-            dsc_mean = dsc_stack.mean(dim=0).tolist()  # [C-1]
-            dsc_std = dsc_stack.std(dim=0).tolist()    # [C-1]
+            dsc_mean = dsc_stack.mean(dim=0).tolist()  
+            dsc_std = dsc_stack.std(dim=0).tolist()    
 
-            # Store in results
+            # Store results
             results[filename] = {
                 "dsc_mean": dsc_mean,
                 "dsc_std": dsc_std
@@ -86,6 +86,7 @@ def main(args):
         test_dataset = TrainerDataset(split='Test', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         cal_dataset = TrainerDataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
 
+    print(len(test_dataset), len(cal_dataset))
     val_kwargs = {'pin_memory': True, 'batch_size': 1, 'shuffle': False}
     test_loader = torch.utils.data.DataLoader(test_dataset, **val_kwargs)
     cal_loader = torch.utils.data.DataLoader(cal_dataset, **val_kwargs)
@@ -108,7 +109,7 @@ def main(args):
     for i, ckpt_path in enumerate(tqdm(checkpoint_paths, desc="Checkpoint")):
         ckpt_name = ckpt_path.stem
         model = PHISeg(total_levels=7, latent_levels=5, zdim=2, num_classes=n_classes + 1, beta=1.0).to(device)
-        model.load_state_dict(torch.load(ckpt_path, map_location=device))
+        model.load_state_dict(torch.load(ckpt_path, map_location=device, weights_only=True))
 
         # Inference on Calibration
         cal_output_dir = os.path.join(output_dir, "Calibration")

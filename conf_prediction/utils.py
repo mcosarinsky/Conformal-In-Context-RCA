@@ -162,7 +162,7 @@ def plot_datasets_interval_widths(data, cal_method, figsize=(14,7), title=None, 
     }
 
     # Model label mapping
-    model_lookup = {'sam': 'SAM 2', 'atlas-ra': 'Atlas-RA'}
+    model_lookup = {'sam': 'SAM 2', 'atlas-ra': 'Atlas-RA', 'useg': 'UniverSeg'}
 
     all_data = []
 
