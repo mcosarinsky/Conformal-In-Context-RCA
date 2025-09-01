@@ -1,5 +1,9 @@
 env/
 sam2/
+phiseg_checkpoints/
+results/
+temp_img_dir/
+figures/
 !segment-anything-2/sam2/
 datasets/
 !src/datasets/
