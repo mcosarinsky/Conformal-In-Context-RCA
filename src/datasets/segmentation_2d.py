@@ -33,12 +33,12 @@ class Seg2D_Dataset(Dataset):
             img = process_img(img_file, self.target_size, grayscale=self.grayscale)
             gt = process_img(label_file, self.target_size, is_seg=True)
             seg = process_img(seg_file, self.target_size, is_seg=True)
-            sample = {'image': img, 'GT': gt, 'seg': seg, 'name': img_file.name}
+            sample = {'image': img, 'GT': gt, 'seg': seg, 'name': img_file.name, 'seg_name': seg_file.name}
         else:
             img_file, label_file = self._data[idx]
             img = process_img(img_file, self.target_size, grayscale=self.grayscale)
             gt = process_img(label_file, self.target_size, is_seg=True) 
-            sample = {'image': img, 'GT': gt, 'name': img_file.name}
+            sample = {'image': img, 'GT': gt, 'name': img_file.name, 'seg_name': label_file.name}
 
         # Normalize ground truth for binary masks
         if len(np.unique(gt)) == 2:

@@ -129,8 +129,12 @@ if __name__ == "__main__":
     train_kwargs = {'pin_memory': True, 'batch_size': args.batch_size, 'shuffle': True}
     val_kwargs = {'pin_memory': True, 'batch_size': 1, 'shuffle': False}
 
-    full_dataset = ConcatDataset([train_dataset, cal_dataset, test_dataset])
-    train_loader = DataLoader(train_dataset, **train_kwargs, drop_last=True)
+    n_total = len(train_dataset)
+    n_subset = int(0.5 * n_total)
+    subset_indices = np.random.choice(n_total, n_subset, replace=False)
+    subset_train_dataset = torch.utils.data.Subset(train_dataset, subset_indices)
+
+    train_loader = DataLoader(subset_train_dataset, **train_kwargs, drop_last=True)
     cal_loader = DataLoader(cal_dataset, **val_kwargs)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

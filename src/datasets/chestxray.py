@@ -2,6 +2,7 @@ import os
 import pathlib
 import torch
 import torch.nn.functional as F
+from pathlib import Path
 from skimage import io, transform
 import numpy as np
 from torch.utils.data import Dataset
@@ -104,7 +105,9 @@ class LandmarksDataset(Dataset):
         
         if self.is_seg:
             seg = io.imread(self.images[idx]).astype('int')
+            seg_path = Path(self.images[idx])
             sample['seg'] = seg
+            sample['seg_name'] = str(Path(*seg_path.parts[-3:]))
 
         if self.transform:
             sample = self.transform(sample)
@@ -464,16 +467,14 @@ class ToNumpy(object):
 
     def __call__(self, sample):
         for key in sample.keys():
-            if not torch.is_tensor(sample[key]):
-                raise TypeError(f"{key} must be a tensor before conversion to numpy array.")
-            
-            array = sample[key].squeeze().numpy()
+            if torch.is_tensor(sample[key]):
+                array = sample[key].squeeze().numpy()
 
-            if key != 'image':
-                sample[key] = array.astype(np.uint8)
-            else:
-                img_np = (array * 255).astype(np.uint8)
-                sample[key] = img_np
+                if key != 'image':
+                    sample[key] = array.astype(np.uint8)
+                else:
+                    img_np = (array * 255).astype(np.uint8)
+                    sample[key] = img_np
         return sample
 
 class OneHot(object):

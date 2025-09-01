@@ -54,7 +54,7 @@ def nonconformity_score(arr, y, estimator='mean', sigma_type='std', scale_factor
         return err * scale_factor # For 'abs', no need for sigma
     else:
         raise ValueError(f"Unknown sigma_type: {sigma_type}")
-    return (err / max(s, 1e-6)) * scale_factor
+    return (err / max(s, 0.025)) * scale_factor
 
 def conformal_calibrate(dataset_dict, estimator='mean', alpha=0.1, sigma_type='std', scale_factor=1.0, n=50):
     """
@@ -105,16 +105,16 @@ def conformal_calibrate(dataset_dict, estimator='mean', alpha=0.1, sigma_type='s
                 half_width = qhat
             elif sigma_type == 'std':
                 s = np.std(arr, ddof=1)
-                half_width = qhat * max(s, 1e-6)
+                half_width = qhat * max(s, 0.025)
             elif sigma_type == 'iqr':
                 s = sigma_iqr(arr)
-                half_width = qhat * max(s, 1e-6)
+                half_width = qhat * max(s, 0.025)
             elif sigma_type == 'trimmed':
                 s = sigma_trimmed(arr)
-                half_width = qhat * max(s, 1e-6)
+                half_width = qhat * max(s, 0.025)
             elif sigma_type == 'mad':
                 s = sigma_mad(arr)
-                half_width = qhat * max(s, 1e-6)
+                half_width = qhat * max(s, 0.025)
             else:
                 raise ValueError(f"Unknown sigma_type: {sigma_type}")
 

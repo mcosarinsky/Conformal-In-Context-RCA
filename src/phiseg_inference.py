@@ -86,7 +86,6 @@ def main(args):
         test_dataset = TrainerDataset(split='Test', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         cal_dataset = TrainerDataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
 
-    print(len(test_dataset), len(cal_dataset))
     val_kwargs = {'pin_memory': True, 'batch_size': 1, 'shuffle': False}
     test_loader = torch.utils.data.DataLoader(test_dataset, **val_kwargs)
     cal_loader = torch.utils.data.DataLoader(cal_dataset, **val_kwargs)
@@ -124,7 +123,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PHISeg Inference Script")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset name used for training.")
     parser.add_argument("--seed", type=int, default=1, help="Random seed for reproducibility.")
-    parser.add_argument("--N", type=int, default=5, help="Number of samples to generate per image.")
+    parser.add_argument("--N", type=int, default=50, help="Number of samples to generate per image.")
 
     args = parser.parse_args()
     main(args)

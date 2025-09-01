@@ -12,7 +12,6 @@ import json
 
 from torch.utils.data import Subset
 from src.utils.io import to_json
-from src.metrics import compute_scores, sample_N, sample_balanced
 from src.rca import RCA
 from src.utils.data_transforms import ToTensor, OneHot, Scale, HUScale
 from src.datasets import *
@@ -83,12 +82,9 @@ def main():
         d_reference = Seg2D_Dataset(split='Train', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         d_test = Seg2D_Dataset(split='Test', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
         d_cal = Seg2D_Dataset(split='Calibration', dataset=args.dataset, transform=transforms, grayscale=grayscale, target_size=target_size)
-        #d_test_np = Seg2D_Dataset(split='Test', dataset=args.dataset, grayscale=grayscale, target_size=target_size)
-        #scores = compute_scores(d_test_np, n_classes)
-        #idxs = sample_balanced(scores, n_buckets=5, min_val=0)
         print('Evaluating', len(d_test), 'samples for test and', len(d_cal), 'samples for calibration')
 
-    rca_args = {'eval_metrics': ['Dice', 'Hausdorff', 'HD95', 'ASSD'],
+    rca_args = {'eval_metrics': ['Dice'],
                 'n_test': args.n_test,
                 'n_classes': n_classes,
                 'emb_model': args.emb_model

@@ -50,12 +50,11 @@ def main():
 
     if args.classifier == 'sam2':
         sam2_checkpoints = 'sam2/checkpoints/'
-        model_type_dict = {'sam2_hiera_t':'sam2_hiera_tiny',
-                           'sam2_hiera_s':'sam2_hiera_small',
-                           'sam2_hiera_b+':'sam2_hiera_base_plus',
-                           'sam2_hiera_l':'sam2_hiera_large'}
-        for k, v in model_type_dict.items():
+        model_type_dict = {'sam2_hiera_t':'sam2_hiera_tiny', 'sam2_hiera_s':'sam2_hiera_small', 'sam2_hiera_b+':'sam2_hiera_base_plus','sam2_hiera_l':'sam2_hiera_large', 'sam2.1_hiera_t':'sam2.1_hiera_tiny'}
+        
+        for k,v in model_type_dict.items():
             model_type_dict[k] = os.path.join(sam2_checkpoints, f'{v}.pt')
+        
         rca_args['config'] = f"{args.config}.yaml"
         rca_args['checkpoint'] = model_type_dict[args.config]
 

@@ -225,9 +225,9 @@ def plot_score(ax, real_scores, pred_scores, bold_corr=False, bold_mae=False):
 
     ax.annotate(
         label_text,
-        xy=(0.04, 0.85),  # Adjusted y-coordinate for annotation box
+        xy=(0.04, 0.87),  # Adjusted y-coordinate for annotation box
         xycoords='axes fraction',
-        fontsize=12,  
+        fontsize=13,  
         bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='white')
     )
 
@@ -276,7 +276,7 @@ def plot_scores_multi(ax, real_scores, pred_scores, class_names=None, bold_corr_
         sns.scatterplot(x=real_class_scores, y=pred_class_scores, ax=ax, color=colors[i],
                         label=label_text)
 
-    ax.legend(loc=(0.01, 0.81), fancybox=True, fontsize=12, labelspacing=0.1, handletextpad=0.05)
+    ax.legend(loc=(0.01, 0.83), fancybox=True, fontsize=13, labelspacing=0.1, handletextpad=0.05)
 
 def plot_results(eval_results, **kwargs):
     sns.set_theme(style="whitegrid")

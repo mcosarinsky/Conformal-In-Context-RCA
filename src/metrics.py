@@ -116,7 +116,7 @@ def sample_N(scores, N, n_buckets=10):
     return np.array(final_sampled_indices)
 
 
-def sample_balanced(scores, n_buckets=10, min_val=0):
+def sample_balanced(scores, n_buckets=10, min_val=0, max_val=1):
     """
     Sample the same number of items from each bucket for each class (if multiclass),
     and return the union of indices without duplicates.
@@ -139,7 +139,7 @@ def sample_balanced(scores, n_buckets=10, min_val=0):
         class_scores = scores[:, c]
 
         # Create bins and assign scores to buckets
-        bins = np.linspace(min_val, 1, n_buckets + 1)
+        bins = np.linspace(min_val, max_val, n_buckets + 1)
         bucket_indices = np.digitize(class_scores, bins, right=False) - 1
         buckets = [np.where(bucket_indices == i)[0] for i in range(n_buckets)]
         min_bucket_size = min(len(b) for b in buckets if len(b) > 0)

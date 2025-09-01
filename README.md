@@ -19,7 +19,8 @@ This repository contains the code for the In-Context RCA project. It includes RC
 ## Repository Structure
 
 - **unet_segmentations**: Contains different quality segmentations generated with a UNet.
-- **src**: Contains the supported models along with scripts for preprocessing, generating the datasets and evaluation
+- **conf_prediction**: Contains files with different calibration methods amond which Conformal-RCA, found in `quantile.py`
+- **src**: Contains the supported models along with scripts for preprocessing, generating the datasets, training and evaluation
 - **scripts**: Contains `run_inference.py` and `custom_inference.py` scripts for reproducing experiments and running the method on user's custom data.
 
 ## Datasets
