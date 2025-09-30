@@ -1,4 +1,4 @@
-# In-Context RCA
+# Conformal In-Context RCA
 
 This repository contains the code for the In-Context RCA project. It includes RCA classifier models, a UNet for segmentation, and utilities to support training and inference using PyTorch.
 
@@ -54,9 +54,9 @@ python custom_inference.py --ref_dataset <reference_dataset_path> --eval_dataset
 If you are using our masks please cite our work:
 
 ```
-@misc{cosarinsky2025incontextreverseclassificationaccuracy,
-      title={In-Context Reverse Classification Accuracy: Efficient Estimation of Segmentation Quality without Ground-Truth}, 
-      author={Matias Cosarinsky and Ramiro Billot and Lucas Mansilla and Gabriel Gimenez and Nicolas Gaggión and Guanghui Fu and Enzo Ferrante},
+@misc{cosarinsky2025conformalincontextreverseclassification,
+      title={Conformal In-Context Reverse Classification Accuracy: Efficient Estimation of Segmentation Quality with Statistical Guarantees}, 
+      author={Matias Cosarinsky and Ramiro Billot and Lucas Mansilla and Gabriel Jimenez and Nicolas Gaggión and Guanghui Fu and Tom Tirer and Enzo Ferrante},
       year={2025},
       eprint={2503.04522},
       archivePrefix={arXiv},
